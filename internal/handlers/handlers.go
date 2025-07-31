@@ -35,17 +35,18 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		http.Error(w, "Failed to parse form", http.StatusInternalServerError)
+	if err := r.ParseMultipartForm(10 << 20); err != nil { // 10MB максимум
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
 		return
 	}
 
-	file, header, err := r.FormFile("file")
+	file, _, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "No file uploaded", http.StatusBadRequest)
 		return
@@ -65,10 +66,9 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ext := filepath.Ext(header.Filename)
+	ext := filepath.Ext(r.FormValue("file"))
 	timestamp := time.Now().UTC().Format("20060102_150405")
 	outputFilename := fmt.Sprintf("result_%s%s", timestamp, ext)
-
 	if err := os.WriteFile(outputFilename, []byte(result), 0644); err != nil {
 		http.Error(w, "Failed to save result file", http.StatusInternalServerError)
 		return
