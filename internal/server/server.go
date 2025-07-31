@@ -7,9 +7,6 @@ import (
 	"time"
 
 	"github.com/Yandex-Practicum/go1fl-sprint6-final/internal/handlers"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Server struct {
@@ -18,7 +15,7 @@ type Server struct {
 }
 
 func New(logger *log.Logger) *Server {
-	router := createChiRouter(logger)
+	router := createRouter(logger)
 
 	httpServer := &http.Server{
 		Addr:         ":8080",
@@ -35,20 +32,12 @@ func New(logger *log.Logger) *Server {
 	}
 }
 
-func createChiRouter(logger *log.Logger) *chi.Mux {
-	r := chi.NewRouter()
-
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(60 * time.Second))
-
-	r.Get("/", handlers.RootHandler)
-	r.Post("/upload", handlers.UploadHandler)
-
-	logger.Println("Chi роутер создан, хендлеры зарегистрированы")
-	return r
+func createRouter(logger *log.Logger) *http.ServeMux {
+	router := http.NewServeMux()
+	router.HandleFunc("/", handlers.RootHandler)
+	router.HandleFunc("/upload", handlers.UploadHandler)
+	logger.Println("Роутер создан, хендлеры зарегистрированы")
+	return router
 }
 
 func (s *Server) Start() error {

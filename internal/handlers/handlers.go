@@ -19,13 +19,13 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 
 	path, err := filepath.Abs("index.html")
 	if err != nil {
-		http.Error(w, "Failed to resolve file path", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to resolve path: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		http.Error(w, "Failed to read index.html", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to read file: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -35,13 +35,12 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
-
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	if err := r.ParseMultipartForm(10 << 20); err != nil { // 10MB максимум
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		http.Error(w, "Failed to parse form", http.StatusBadRequest)
 		return
 	}
@@ -53,24 +52,21 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	fileBytes, err := io.ReadAll(file)
+	content, err := io.ReadAll(file)
 	if err != nil {
-		http.Error(w, "Failed to read file content", http.StatusInternalServerError)
-		return
-	}
-	content := string(fileBytes)
-
-	result, err := service.Convert(content)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Conversion error: %v", err), http.StatusInternalServerError)
+		http.Error(w, "Failed to read file", http.StatusInternalServerError)
 		return
 	}
 
-	ext := filepath.Ext(r.FormValue("file"))
-	timestamp := time.Now().UTC().Format("20060102_150405")
-	outputFilename := fmt.Sprintf("result_%s%s", timestamp, ext)
+	result, err := service.Convert(string(content))
+	if err != nil {
+		http.Error(w, "Conversion error", http.StatusInternalServerError)
+		return
+	}
+
+	outputFilename := "result_" + time.Now().UTC().String() + ".txt"
 	if err := os.WriteFile(outputFilename, []byte(result), 0644); err != nil {
-		http.Error(w, "Failed to save result file", http.StatusInternalServerError)
+		http.Error(w, "Failed to save result", http.StatusInternalServerError)
 		return
 	}
 

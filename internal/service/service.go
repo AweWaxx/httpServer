@@ -19,14 +19,11 @@ func IsMorse(input string) bool {
 
 func Convert(input string) (string, error) {
 	if input == "" {
-		return "", errors.New("пустая строка")
+		return "", errors.New("empty input")
 	}
 
 	if IsMorse(input) {
-
 		return morse.DefaultConverter.ToText(input), nil
-	} else {
-
-		return morse.DefaultConverter.ToMorse(input), nil
 	}
+	return morse.DefaultConverter.ToMorse(input), nil
 }
